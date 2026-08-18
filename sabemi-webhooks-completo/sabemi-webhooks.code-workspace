@@ -1,0 +1,16 @@
+{
+  "folders": [
+    { "name": "raiz (solução .NET)", "path": "." },
+    { "name": "backend", "path": "Sabemi.webhook.Api" },
+    { "name": "testes .NET", "path": "Sabemi.webhook.Api.Tests" },
+    { "name": "frontend", "path": "frontend" },
+    { "name": "testing", "path": "testing" }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/bin": true,
+      "**/obj": true,
+      "**/node_modules": true
+    }
+  }
+}

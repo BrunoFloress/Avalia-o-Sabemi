@@ -1,0 +1,110 @@
+### Sabemi · Testes manuais do endpoint de Webhook
+### Requer a extensão "REST Client" (humao.rest-client) no VS Code
+### Rode cada bloco com o link "Send Request" que aparece acima dele
+
+@baseUrl = http://localhost:5000
+@apiKeyValida = sabemi-secret-2026
+@apiKeyInvalida = chave-errada
+
+### 1. Caminho feliz — deve retornar 202 Accepted
+POST {{baseUrl}}/webhooks/pagamento
+Content-Type: application/json
+X-Api-Key: {{apiKeyValida}}
+
+{
+  "idTransacao": "TX-1001",
+  "idContrato": "CT-500",
+  "valor": 349.90,
+  "dataPagamento": "2026-08-18T10:00:00Z",
+  "status": "Sucesso"
+}
+
+### 2. Idempotência — reenviar a MESMA idTransacao (simula erro de rede do banco)
+### Esperado: 200 OK com mensagem "já recebido", SEM criar novo registro
+POST {{baseUrl}}/webhooks/pagamento
+Content-Type: application/json
+X-Api-Key: {{apiKeyValida}}
+
+{
+  "idTransacao": "TX-1001",
+  "idContrato": "CT-500",
+  "valor": 349.90,
+  "dataPagamento": "2026-08-18T10:00:00Z",
+  "status": "Sucesso"
+}
+
+### 3. Segurança — sem header X-Api-Key
+### Esperado: 401 Unauthorized
+POST {{baseUrl}}/webhooks/pagamento
+Content-Type: application/json
+
+{
+  "idTransacao": "TX-1002",
+  "idContrato": "CT-501",
+  "valor": 120.00,
+  "dataPagamento": "2026-08-18T10:05:00Z",
+  "status": "Sucesso"
+}
+
+### 4. Segurança — ApiKey incorreta
+### Esperado: 401 Unauthorized
+POST {{baseUrl}}/webhooks/pagamento
+Content-Type: application/json
+X-Api-Key: {{apiKeyInvalida}}
+
+{
+  "idTransacao": "TX-1003",
+  "idContrato": "CT-502",
+  "valor": 89.50,
+  "dataPagamento": "2026-08-18T10:10:00Z",
+  "status": "Sucesso"
+}
+
+### 5. Evento de erro — para aparecer o alerta visual no dashboard
+POST {{baseUrl}}/webhooks/pagamento
+Content-Type: application/json
+X-Api-Key: {{apiKeyValida}}
+
+{
+  "idTransacao": "TX-1004",
+  "idContrato": "CT-503",
+  "valor": 500.00,
+  "dataPagamento": "2026-08-18T10:15:00Z",
+  "status": "Erro"
+}
+
+### 6. Payload malformado — sem idTransacao
+### Esperado: 400 Bad Request (validação do DTO)
+POST {{baseUrl}}/webhooks/pagamento
+Content-Type: application/json
+X-Api-Key: {{apiKeyValida}}
+
+{
+  "idContrato": "CT-504",
+  "valor": 10.00,
+  "dataPagamento": "2026-08-18T10:20:00Z",
+  "status": "Sucesso"
+}
+
+### 7. Resiliência — cronometre esta chamada
+### Esperado: resposta em ~poucos ms (202), NÃO em 2s — prova que o processamento é assíncrono
+POST {{baseUrl}}/webhooks/pagamento
+Content-Type: application/json
+X-Api-Key: {{apiKeyValida}}
+
+{
+  "idTransacao": "TX-1005",
+  "idContrato": "CT-505",
+  "valor": 777.77,
+  "dataPagamento": "2026-08-18T10:25:00Z",
+  "status": "Sucesso"
+}
+
+### 8. Consultar o dashboard — todos os eventos
+GET {{baseUrl}}/webhooks/status
+
+### 9. Consultar o dashboard — apenas erros
+GET {{baseUrl}}/webhooks/status?status=Erro
+
+### 10. Consultar o dashboard — filtrando por contrato
+GET {{baseUrl}}/webhooks/status?idContrato=CT-500

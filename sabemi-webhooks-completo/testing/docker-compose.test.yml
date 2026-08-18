@@ -1,0 +1,23 @@
+# Ambiente de banco isolado para rodar os testes sem afetar dados de desenvolvimento.
+# Uso:
+#   docker compose -f testing/docker-compose.test.yml up -d
+#   dotnet ef database update --connection "Host=localhost;Port=5433;Database=sabemi_test;Username=postgres;Password=teste"
+
+version: "3.9"
+
+services:
+  postgres-test:
+    image: postgres:16
+    container_name: sabemi-postgres-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: teste
+      POSTGRES_DB: sabemi_test
+    ports:
+      - "5433:5432"
+    volumes:
+      - sabemi_test_data:/var/lib/postgresql/data
+
+volumes:
+  sabemi_test_data:
